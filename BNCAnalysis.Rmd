@@ -1,6 +1,7 @@
 # Response to Buettner, Natarajan "Computational analysis of cell-to-cell heterogeneity in single-cell RNA-sequencing data reveals hidden subpopulations of cells"
 ### Andrew McDavid, Raphael Gottardo, Greg Finak
 #### Fred Hutchinson Cancer Research Center
+#### 9 March 2015
 <!-- using knitrBootstrap::knit_bootstrap -->
 ```{r libraries, echo=TRUE, error=FALSE, cache=FALSE, echo=FALSE}
 opts_chunk$set(message=FALSE, error=FALSE, warning=FALSE, cache=TRUE, auto.dep=TRUE, echo=TRUE)
@@ -269,3 +270,8 @@ kable(resFDR[1:20,list(Direction, FDR, totalrank, set)])
 ```
 
 
+## Session Info
+This was generated using
+```{r}
+sessionInfo()
+```

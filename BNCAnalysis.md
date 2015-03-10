@@ -1,6 +1,7 @@
 # Response to Buettner, Natarajan "Computational analysis of cell-to-cell heterogeneity in single-cell RNA-sequencing data reveals hidden subpopulations of cells"
 ### Andrew McDavid, Raphael Gottardo, Greg Finak
 #### Fred Hutchinson Cancer Research Center
+#### 9 March 2015
 <!-- using knitrBootstrap::knit_bootstrap -->
 
 
@@ -328,3 +329,44 @@ kable(resFDR[1:20,list(Direction, FDR, totalrank, set)])
 |        -1| 0.0089812|        20|REACTOME_E2F_ENABLED_INHIBITION_OF_PRE_REPLICATION_COMPLEX_FORMATION                     |
 
 
+## Session Info
+This was generated using
+
+```r
+sessionInfo()
+```
+
+```
+## R version 3.1.2 (2014-10-31)
+## Platform: x86_64-pc-linux-gnu (64-bit)
+## 
+## locale:
+##  [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C              
+##  [3] LC_TIME=en_US.UTF-8        LC_COLLATE=en_US.UTF-8    
+##  [5] LC_MONETARY=en_US.UTF-8    LC_MESSAGES=en_US.UTF-8   
+##  [7] LC_PAPER=en_US.UTF-8       LC_NAME=C                 
+##  [9] LC_ADDRESS=C               LC_TELEPHONE=C            
+## [11] LC_MEASUREMENT=en_US.UTF-8 LC_IDENTIFICATION=C       
+## 
+## attached base packages:
+##  [1] parallel  stats4    grid      stats     graphics  grDevices utils    
+##  [8] datasets  methods   base     
+## 
+## other attached packages:
+##  [1] Rtsne_0.9            stringr_0.6.2        GSEABase_1.28.0     
+##  [4] graph_1.44.1         annotate_1.44.0      XML_3.98-1.1        
+##  [7] BiocInstaller_1.16.1 limma_3.22.6         org.Mm.eg.db_3.0.0  
+## [10] RSQLite_1.0.0        DBI_0.3.1            AnnotationDbi_1.28.1
+## [13] GenomeInfoDb_1.2.4   IRanges_2.0.1        S4Vectors_0.4.0     
+## [16] Biobase_2.26.0       BiocGenerics_0.12.1  gridExtra_0.9.1     
+## [19] gdata_2.13.3         GGally_0.5.0         ggplot2_1.0.0       
+## [22] data.table_1.9.4     knitr_1.9            devtools_1.7.0      
+## 
+## loaded via a namespace (and not attached):
+##  [1] chron_2.3-45     codetools_0.2-10 colorspace_1.2-5 compiler_3.1.2  
+##  [5] digest_0.6.8     evaluate_0.5.5   formatR_1.0      gtable_0.1.2    
+##  [9] gtools_3.4.1     labeling_0.3     markdown_0.7.4   MASS_7.3-39     
+## [13] mime_0.2         munsell_0.4.2    plyr_1.8.1       proto_0.3-10    
+## [17] Rcpp_0.11.5      reshape_0.8.5    reshape2_1.4.1   scales_0.2.4    
+## [21] tcltk_3.1.2      tools_3.1.2      xtable_1.7-4
+```
