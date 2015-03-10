@@ -242,11 +242,6 @@ We considered gene set enrichment analysis on the corrected T-cell data.
 eSet <- ExpressionSet(t(T_cell_matrix_corrected))
 pData(eSet) <- TcellCdat
 ```
-
-We considered gene set enrichment analysis on the corrected T-cell data.
-
-
-
 We used the Broad Institute's "Reactome" module available here: http://www.broadinstitute.org/gsea/msigdb/collections.jsp.
 ```{r}
 c2_set <- getGmt("data/c2.cp.reactome.v4.0.symbols.gmt")
@@ -254,10 +249,8 @@ gene_ids <- geneIds(c2_set)
 ## # Camera requires gene-indices
 design <- model.matrix(~clusterid, eSet)
 sets_indices <- ids2indices(gene_ids, toupper(rownames(eSet))) 
-res <- camera(eSet, sets_indices, contrast=2, design=design)
+res <- camera(eSet, sets_indices, design=design)
 ```
-
-
 
 ```{r topgenes, results='asis'}
 res$Direction <- ifelse(res$Direction=='Up', 1, -1)
@@ -275,41 +268,4 @@ Among the top 20 modules, there is little suggestion of enrichment for immue-rel
 kable(resFDR[1:20,list(Direction, FDR, totalrank, set)]) 
 ```
 
-
-## Gene Set Enrichment Analysis using Counts Per Million and GATA3 level
-We explored GSEA on the uncorrected data, as well.
-To relax the assumption of faithful normalization via the ERCC spike-ins we calculated the counts per million for each gene.
-
-```{r cpm, results='hide'}
-counts <- 10^(T_cell_matrix)-1
-scounts <- rowSums(counts)
-logcpm <- log10(counts/scounts*1e6+1)
-geomsizecpm <- rowSums(logcpm)
-```
-Based on the observation from PCA that GATA3 appears to exist more a gradient than in discrete clusters, we considered an alternate GSEA analysis. We used GATA3 expression levels in hopes they might partially define the T cell differentiation state, then removed gata3 from the expression matrix.
-
-```{r definegata3}
-eSet_adj <- ExpressionSet(t(logcpm[, setdiff(colnames(logcpm), 'Gata3')]))
-gata3 <- logcpm[,'Gata3']
-pData(eSet_adj) <- cbind(TcellCdat, geomsizecpm=geomsize, gata3=gata3)
-
-```
-
-Based on observation that `geomsizecpm` still is the leading principal component,  we adjust for it as a nuisance source of variation, and run GSEA, testing gata3:
-```{r gseacpm, results='hide'}
-design <- model.matrix(~gata3+geomsizecpm, eSet_adj)
-sets_indices <- ids2indices(gene_ids, toupper(rownames(eSet))) 
-rescpm <- camera(eSet_adj, sets_indices, contrast = 2, design=design)
-rescpm$Direction <- ifelse(rescpm$Direction=='Up', 1, -1)
-rescpm$set <- row.names(rescpm)
-setDT(rescpm)
-setkey(rescpm, FDR)
-rescpm[,totalrank:=seq_len(.N)]
-```
-The results do not change too much if `geomsizecpm` is not included.
-
-Although no modules are FDR significant, the top few modules relate to immue signaling
-```{r, results='asis'}
-kable(rescpm[1:20,list(Direction, FDR, totalrank, set)]) 
-```
 
