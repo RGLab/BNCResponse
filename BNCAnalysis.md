@@ -3,6 +3,104 @@
 #### Fred Hutchinson Cancer Research Center
 <!-- using knitrBootstrap::knit_bootstrap -->
 
+```
+## data.table 1.9.4  For help type: ?data.table
+## *** NB: by=.EACHI is now explicit. See README to restore previous behaviour.
+## gdata: read.xls support for 'XLS' (Excel 97-2004) files ENABLED.
+## 
+## gdata: read.xls support for 'XLSX' (Excel 2007+) files ENABLED.
+## 
+## Attaching package: 'gdata'
+## 
+## The following object is masked from 'package:stats':
+## 
+##     nobs
+## 
+## The following object is masked from 'package:utils':
+## 
+##     object.size
+## 
+## Loading required package: grid
+## Loading required package: AnnotationDbi
+## Loading required package: stats4
+## Loading required package: BiocGenerics
+## Loading required package: parallel
+## 
+## Attaching package: 'BiocGenerics'
+## 
+## The following objects are masked from 'package:parallel':
+## 
+##     clusterApply, clusterApplyLB, clusterCall, clusterEvalQ,
+##     clusterExport, clusterMap, parApply, parCapply, parLapply,
+##     parLapplyLB, parRapply, parSapply, parSapplyLB
+## 
+## The following object is masked from 'package:gdata':
+## 
+##     combine
+## 
+## The following object is masked from 'package:stats':
+## 
+##     xtabs
+## 
+## The following objects are masked from 'package:base':
+## 
+##     Filter, Find, Map, Position, Reduce, anyDuplicated, append,
+##     as.data.frame, as.vector, cbind, colnames, do.call,
+##     duplicated, eval, evalq, get, intersect, is.unsorted, lapply,
+##     mapply, match, mget, order, paste, pmax, pmax.int, pmin,
+##     pmin.int, rank, rbind, rep.int, rownames, sapply, setdiff,
+##     sort, table, tapply, union, unique, unlist, unsplit
+## 
+## Loading required package: Biobase
+## Welcome to Bioconductor
+## 
+##     Vignettes contain introductory material; view with
+##     'browseVignettes()'. To cite Bioconductor, see
+##     'citation("Biobase")', and for packages 'citation("pkgname")'.
+## 
+## Loading required package: GenomeInfoDb
+## Loading required package: S4Vectors
+## Loading required package: IRanges
+## 
+## Attaching package: 'IRanges'
+## 
+## The following object is masked from 'package:gdata':
+## 
+##     trim
+## 
+## 
+## Attaching package: 'AnnotationDbi'
+## 
+## The following object is masked from 'package:GenomeInfoDb':
+## 
+##     species
+## 
+## Loading required package: DBI
+## 
+## 
+## Attaching package: 'limma'
+## 
+## The following object is masked from 'package:BiocGenerics':
+## 
+##     plotMA
+## 
+## Loading required package: annotate
+## Loading required package: XML
+## 
+## Attaching package: 'annotate'
+## 
+## The following object is masked from 'package:GenomeInfoDb':
+## 
+##     organism
+## 
+## Loading required package: graph
+## 
+## Attaching package: 'graph'
+## 
+## The following object is masked from 'package:XML':
+## 
+##     addNode
+```
 
 ## Loading mESC data
 We first load the expression data that the authors provide in the paper, although note that the final gene in the mESC data set contained corrupted data in the file included in the Nature supplement.   John Marioni kindly provided us with a version that fixed that corruption, which is what is being used here.
@@ -278,125 +376,8 @@ We considered gene set enrichment analysis on the corrected T-cell data.
 
 
 
-We used the Broad Institute's "Reactome" module available here: http://www.broadinstitute.org/gsea/msigdb/collections.jsp.
-
-```r
-c2_set <- getGmt("data/c2.cp.reactome.v4.0.symbols.gmt")
-gene_ids <- geneIds(c2_set)
-## # Camera requires gene-indices
-design <- model.matrix(~clusterid, eSet)
-sets_indices <- ids2indices(gene_ids, toupper(rownames(eSet))) 
-res <- camera(eSet, sets_indices, contrast=2, design=design)
-```
 
 
 
 
-```r
-res$Direction <- ifelse(res$Direction=='Up', 1, -1)
-res$set <- row.names(res)
-setDT(res)
-setkey(res, FDR) 
-res <- res[,':='(totalrank=rank(PValue))]
-resFDR <- res[FDR<.05,]
-nFDR <- nrow(resFDR)
-```
-In the 34 modules with a FDR-q value 5% or less, a substantial number relate to cell cycle.
-
-Among the top 20 modules, there is little suggestion of enrichment for immue-related modules.  Many modules relate to cell cycling.
-
-```r
-kable(resFDR[1:20,list(Direction, FDR, totalrank, set)]) 
-```
-
-
-
-| Direction|       FDR| totalrank|set                                                                                      |
-|---------:|---------:|---------:|:----------------------------------------------------------------------------------------|
-|        -1| 0.0000036|         1|REACTOME_MITOTIC_PROMETAPHASE                                                            |
-|        -1| 0.0000153|         2|REACTOME_E2F_MEDIATED_REGULATION_OF_DNA_REPLICATION                                      |
-|        -1| 0.0000346|         3|REACTOME_DEPOSITION_OF_NEW_CENPA_CONTAINING_NUCLEOSOMES_AT_THE_CENTROMERE                |
-|        -1| 0.0000346|         4|REACTOME_G2_M_CHECKPOINTS                                                                |
-|        -1| 0.0000951|         5|REACTOME_G1_S_SPECIFIC_TRANSCRIPTION                                                     |
-|        -1| 0.0002130|         6|REACTOME_CELL_CYCLE                                                                      |
-|        -1| 0.0002834|         7|REACTOME_CHROMOSOME_MAINTENANCE                                                          |
-|        -1| 0.0015164|         8|REACTOME_ACTIVATION_OF_ATR_IN_RESPONSE_TO_REPLICATION_STRESS                             |
-|        -1| 0.0015164|         9|REACTOME_DNA_REPLICATION                                                                 |
-|        -1| 0.0015164|        10|REACTOME_CELL_CYCLE_MITOTIC                                                              |
-|        -1| 0.0015164|        11|REACTOME_KINESINS                                                                        |
-|        -1| 0.0015164|        12|REACTOME_MITOTIC_M_M_G1_PHASES                                                           |
-|        -1| 0.0018450|        13|REACTOME_DOUBLE_STRAND_BREAK_REPAIR                                                      |
-|        -1| 0.0020784|        14|REACTOME_CYCLIN_A_B1_ASSOCIATED_EVENTS_DURING_G2_M_TRANSITION                            |
-|        -1| 0.0032273|        15|REACTOME_G2_M_DNA_DAMAGE_CHECKPOINT                                                      |
-|        -1| 0.0037052|        16|REACTOME_FANCONI_ANEMIA_PATHWAY                                                          |
-|        -1| 0.0037108|        17|REACTOME_ACTIVATION_OF_THE_PRE_REPLICATIVE_COMPLEX                                       |
-|        -1| 0.0048701|        18|REACTOME_HOMOLOGOUS_RECOMBINATION_REPAIR_OF_REPLICATION_INDEPENDENT_DOUBLE_STRAND_BREAKS |
-|        -1| 0.0061528|        19|REACTOME_APC_CDC20_MEDIATED_DEGRADATION_OF_NEK2A                                         |
-|        -1| 0.0089812|        20|REACTOME_E2F_ENABLED_INHIBITION_OF_PRE_REPLICATION_COMPLEX_FORMATION                     |
-
-
-## Gene Set Enrichment Analysis using Counts Per Million and GATA3 level
-We explored GSEA on the uncorrected data, as well.
-To relax the assumption of faithful normalization via the ERCC spike-ins we calculated the counts per million for each gene.
-
-
-```r
-counts <- 10^(T_cell_matrix)-1
-scounts <- rowSums(counts)
-logcpm <- log10(counts/scounts*1e6+1)
-geomsizecpm <- rowSums(logcpm)
-```
-Based on the observation from PCA that GATA3 appears to exist more a gradient than in discrete clusters, we considered an alternate GSEA analysis. We used GATA3 expression levels in hopes they might partially define the T cell differentiation state, then removed gata3 from the expression matrix.
-
-
-```r
-eSet_adj <- ExpressionSet(t(logcpm[, setdiff(colnames(logcpm), 'Gata3')]))
-gata3 <- logcpm[,'Gata3']
-pData(eSet_adj) <- cbind(TcellCdat, geomsizecpm=geomsize, gata3=gata3)
-```
-
-Based on observation that `geomsizecpm` still is the leading principal component,  we adjust for it as a nuisance source of variation, and run GSEA, testing gata3:
-
-```r
-design <- model.matrix(~gata3+geomsizecpm, eSet_adj)
-sets_indices <- ids2indices(gene_ids, toupper(rownames(eSet))) 
-rescpm <- camera(eSet_adj, sets_indices, contrast = 2, design=design)
-rescpm$Direction <- ifelse(rescpm$Direction=='Up', 1, -1)
-rescpm$set <- row.names(rescpm)
-setDT(rescpm)
-setkey(rescpm, FDR)
-rescpm[,totalrank:=seq_len(.N)]
-```
-The results do not change too much if `geomsizecpm` is not included.
-
-Although no modules are FDR significant, the top few modules relate to immue signaling
-
-```r
-kable(rescpm[1:20,list(Direction, FDR, totalrank, set)]) 
-```
-
-
-
-| Direction|       FDR| totalrank|set                                                                       |
-|---------:|---------:|---------:|:-------------------------------------------------------------------------|
-|        -1| 0.7352039|         1|REACTOME_DOWNREGULATION_OF_ERBB2_ERBB3_SIGNALING                          |
-|        -1| 0.7352039|         2|REACTOME_TRANSFERRIN_ENDOCYTOSIS_AND_RECYCLING                            |
-|        -1| 0.7352039|         3|REACTOME_LATENT_INFECTION_OF_HOMO_SAPIENS_WITH_MYCOBACTERIUM_TUBERCULOSIS |
-|         1| 0.7352039|         4|REACTOME_BETA_DEFENSINS                                                   |
-|        -1| 0.7352039|         5|REACTOME_ENDOGENOUS_STEROLS                                               |
-|        -1| 0.7352039|         6|REACTOME_IRON_UPTAKE_AND_TRANSPORT                                        |
-|        -1| 0.7352039|         7|REACTOME_INSULIN_RECEPTOR_RECYCLING                                       |
-|        -1| 0.7352039|         8|REACTOME_ACTIVATION_OF_CHAPERONES_BY_ATF6_ALPHA                           |
-|         1| 0.7352039|         9|REACTOME_PHOSPHOLIPASE_C_MEDIATED_CASCADE                                 |
-|         1| 0.7352039|        10|REACTOME_THE_NLRP3_INFLAMMASOME                                           |
-|         1| 0.7352039|        11|REACTOME_INFLAMMASOMES                                                    |
-|         1| 0.7352039|        12|REACTOME_TIE2_SIGNALING                                                   |
-|         1| 0.7352039|        13|REACTOME_SIGNALING_BY_FGFR_MUTANTS                                        |
-|        -1| 0.7352039|        14|REACTOME_REGULATION_OF_BETA_CELL_DEVELOPMENT                              |
-|        -1| 0.7352039|        15|REACTOME_REGULATION_OF_GENE_EXPRESSION_IN_BETA_CELLS                      |
-|         1| 0.7352039|        16|REACTOME_ION_TRANSPORT_BY_P_TYPE_ATPASES                                  |
-|         1| 0.7352039|        17|REACTOME_ION_CHANNEL_TRANSPORT                                            |
-|         1| 0.7352039|        18|REACTOME_CA_DEPENDENT_EVENTS                                              |
-|         1| 0.7352039|        19|REACTOME_PLC_BETA_MEDIATED_EVENTS                                         |
-|         1| 0.7352039|        20|REACTOME_DAG_AND_IP3_SIGNALING                                            |
 
