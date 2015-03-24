@@ -1,3 +1,8 @@
+---
+output:
+  html_document:
+    keep_md: yes
+---
 # Response to Buettner, Natarajan "Computational analysis of cell-to-cell heterogeneity in single-cell RNA-sequencing data reveals hidden subpopulations of cells"
 ### Andrew McDavid, Raphael Gottardo, Greg Finak
 #### Fred Hutchinson Cancer Research Center
@@ -19,7 +24,7 @@ library(Biobase)
 library(stringr)
 library(Rtsne)
 library(MASS)
-  })
+})
 ```
 
 ## Loading mESC data
@@ -152,6 +157,7 @@ countsBelow <- cumsum(counts)
 figureData <- data.frame(R2, countsBelow, pctBelow=countsBelow/max(countsBelow), source='From Figure S4b')
 ggplot()+stat_ecdf(data=devModels, mapping=aes(x=pctDev, col=ccRanked)) +geom_line(data=figureData, mapping=aes(x=R2, y=pctBelow, col=source)) + xlab('% R^2 due to cell cycle') + ylab('Cumulative Distribution') + scale_color_discrete("Source") + theme(legend.position=c(.7, .3)) + geom_abline(aes(intercept=c(.5, .9), slope=0), lty=2)
 ```
+
 #### Remark
 Since there is no manifest variable that explains the "technical" variance that BNC subtract in their calculations, we think that it makes more sense to consider the undeflated estimates, since these represent the gene expression values that experimenters must use in practice, until a factor can be identified as a manifest variable for the technical variability.
 
@@ -232,7 +238,6 @@ R2 <- sapply(seq_along(models), function(i){
 })
 
 knitr::kable(data.frame(Model=models, 'R^2' = R2, Subset=names(Subset), check.names=FALSE), row.names=FALSE)
-
 ```
 
 ### Comparison of discrimant power of `geomsize` and `panama`

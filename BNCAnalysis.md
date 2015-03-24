@@ -1,7 +1,7 @@
 # Response to Buettner, Natarajan "Computational analysis of cell-to-cell heterogeneity in single-cell RNA-sequencing data reveals hidden subpopulations of cells"
 ### Andrew McDavid, Raphael Gottardo, Greg Finak
 #### Fred Hutchinson Cancer Research Center
-#### 9 March 2015
+#### 21 March 2015
 <!-- using knitrBootstrap::knit_bootstrap -->
 
 
@@ -242,29 +242,63 @@ grid.arrange(qp3, qp4)
 
 
 ## Relationship between `geomsize`, `panama` and cell cycle
-From the plots of the PCA in mESC, we observe that average geometric size and average panama factor both depend on the cell cycle.  Here we formally consider how much cell cycle explains in these factors by considering a regression of cell cycle on `geomsizeUncorr` (geometric size in uncorrected data) and cell cycle on `panama`.
+From the plots of the PCA in mESC, we observe that average geometric size and average panama factor both depend on the cell cycle.  Here we formally consider how much variance cell cycle explains in these factors by comparing the $R^2$ due to cell cycle on `panama` versus the $R^2$ due to geometric size, within each cell cycle.
 
 ```r
-models <- c('geomsizeUncorr ~ cycle_class', 'panama ~ cycle_class', 'panama ~ geomsizeUncorr +cycle_class')
-R2duetoCC <- sapply(models, function(m){
-    l <- lm(as.formula(m), data=mescCdat)
-    dr <- anova(l)
-    totalss <- sum(dr[,'Sum Sq'])
-    ccss <- sum(dr['cycle_class', 'Sum Sq'])
-    ccss/totalss
+models <- c('panama ~ cycle_class', 'panama ~ geomsizeUncorr', 'panama ~ geomsizeUncorr', 'panama ~ geomsizeUncorr')
+Subset <- list('all'=c('G1', 'S', 'G2M'), G1='G1', S='S', G2M='G2M')
+R2 <- sapply(seq_along(models), function(i){
+    l <- lm(as.formula(models[i]), data=mescCdat, subset=cycle_class %in% Subset[[i]])
+    summary(l)$r.squared
 })
 
-knitr::kable(data.frame(Model=models, 'R^2 due to cycle class' = R2duetoCC, check.names=FALSE), row.names=FALSE)
+knitr::kable(data.frame(Model=models, 'R^2' = R2, Subset=names(Subset), check.names=FALSE), row.names=FALSE)
 ```
 
 
 
-Model                                   R^2 due to cycle class
--------------------------------------  -----------------------
-geomsizeUncorr ~ cycle_class                         0.5313693
-panama ~ cycle_class                                 0.6479790
-panama ~ geomsizeUncorr +cycle_class                 0.0333929
+Model                            R^2  Subset 
+------------------------  ----------  -------
+panama ~ cycle_class       0.6479790  all    
+panama ~ geomsizeUncorr    0.9217106  G1     
+panama ~ geomsizeUncorr    0.7447921  S      
+panama ~ geomsizeUncorr    0.8824271  G2M    
 
+### Comparison of discrimant power of `geomsize` and `panama`
+The comparison can also be inverted.  Using proportional odds logistic regression to classify cells by their geometric size and/or panama factor, we find modestly better performance using `panama`.  In both cases, the error rate exceeds 25%.  The S phase cells are especially resistant to classification.
+
+```r
+## scale geomsize to prevent unfriendly numerics
+pgeom <- polr(cycle_class ~ scale(geomsizeUncorr), data=mescCdat)
+ppanama <- update(pgeom, . ~  panama)
+tgeom <- table(predict(pgeom), mescCdat$cycle_class)
+tpanama <- table(predict(ppanama), mescCdat$cycle_class)
+```
+`geomsize` has a error rate of 0.3736264 and confusion matrix:
+
+```r
+knitr::kable(tgeom)
+```
+
+       G1    S   G2M
+----  ---  ---  ----
+G1     44   11     0
+S      12   28    23
+G2M     3   19    42
+
+`panama` has a error rate of 0.2912088 and confusion matrix:
+
+```r
+knitr::kable(tpanama)
+```
+
+       G1    S   G2M
+----  ---  ---  ----
+G1     46   12     0
+S      12   33    15
+G2M     1   13    50
+
+The heavy dependence of `panama` on geometric size means that the classificiation power of panama is heavily dependent on geometric size being a reasonable instrument for cell cycle, which is assumption that has not been thoroughly tested.
 
 ## Gene Set Enrichment Analysis using Corrected Data
 To conclude our analysis, we investigated if the scLVM factor would be successful in eliminating cell cycle signal when testing for differences between the T-cell clusters.
@@ -349,19 +383,20 @@ sessionInfo()
 ##  [8] datasets  methods   base     
 ## 
 ## other attached packages:
-##  [1] Rtsne_0.9            stringr_0.6.2        GSEABase_1.28.0     
-##  [4] graph_1.44.1         annotate_1.44.0      XML_3.98-1.1        
-##  [7] limma_3.22.7         org.Mm.eg.db_3.0.0   RSQLite_1.0.0       
-## [10] DBI_0.3.1            AnnotationDbi_1.28.2 GenomeInfoDb_1.2.4  
-## [13] IRanges_2.0.1        S4Vectors_0.4.0      Biobase_2.26.0      
-## [16] BiocGenerics_0.12.1  gridExtra_0.9.1      gdata_2.13.3        
-## [19] GGally_0.5.0         ggplot2_1.0.1        data.table_1.9.4    
+##  [1] MASS_7.3-40          Rtsne_0.9            stringr_0.6.2       
+##  [4] GSEABase_1.28.0      graph_1.44.1         annotate_1.44.0     
+##  [7] XML_3.98-1.1         limma_3.22.7         org.Mm.eg.db_3.0.0  
+## [10] RSQLite_1.0.0        DBI_0.3.1            AnnotationDbi_1.28.2
+## [13] GenomeInfoDb_1.2.4   IRanges_2.0.1        S4Vectors_0.4.0     
+## [16] Biobase_2.26.0       BiocGenerics_0.12.1  gridExtra_0.9.1     
+## [19] gdata_2.13.3         GGally_0.5.0         ggplot2_1.0.1       
+## [22] data.table_1.9.4    
 ## 
 ## loaded via a namespace (and not attached):
 ##  [1] chron_2.3-45     codetools_0.2-11 colorspace_1.2-6 digest_0.6.8    
 ##  [5] evaluate_0.5.5   formatR_1.0      gtable_0.1.2     gtools_3.4.1    
-##  [9] htmltools_0.2.6  knitr_1.9        labeling_0.3     MASS_7.3-40     
-## [13] munsell_0.4.2    plyr_1.8.1       proto_0.3-10     Rcpp_0.11.5     
-## [17] reshape_0.8.5    reshape2_1.4.1   rmarkdown_0.5.1  scales_0.2.4    
-## [21] tools_3.1.2      xtable_1.7-4     yaml_2.1.13
+##  [9] htmltools_0.2.6  knitr_1.9        labeling_0.3     munsell_0.4.2   
+## [13] plyr_1.8.1       proto_0.3-10     Rcpp_0.11.5      reshape_0.8.5   
+## [17] reshape2_1.4.1   rmarkdown_0.5.1  scales_0.2.4     tools_3.1.2     
+## [21] xtable_1.7-4     yaml_2.1.13
 ```
