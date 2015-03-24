@@ -1,8 +1,3 @@
----
-output:
-  html_document:
-    keep_md: yes
----
 # Response to Buettner, Natarajan "Computational analysis of cell-to-cell heterogeneity in single-cell RNA-sequencing data reveals hidden subpopulations of cells"
 ### Andrew McDavid, Raphael Gottardo, Greg Finak
 #### Fred Hutchinson Cancer Research Center
@@ -135,10 +130,10 @@ knitr::kable(devSum)
 
 
 
-|ccRanked |      50%|      90%| Ngenes|
-|:--------|--------:|--------:|------:|
-|Unranked | 3.479381| 15.15893|   8994|
-|Ranked   | 7.968757| 26.93517|    609|
+ccRanked         50%        90%   Ngenes
+---------  ---------  ---------  -------
+Unranked    3.479381   15.15893     8994
+Ranked      7.968757   26.93517      609
 
 ### Comparing to Supplementary Figure 4b
 We sought to compare our estimate to a description of these quantities in the paper.  We located an estimate of the effect of cell cycle by reading numbers off of figures S4b/S4d.
@@ -158,7 +153,7 @@ figureData <- data.frame(R2, countsBelow, pctBelow=countsBelow/max(countsBelow),
 ggplot()+stat_ecdf(data=devModels, mapping=aes(x=pctDev, col=ccRanked)) +geom_line(data=figureData, mapping=aes(x=R2, y=pctBelow, col=source)) + xlab('% R^2 due to cell cycle') + ylab('Cumulative Distribution') + scale_color_discrete("Source") + theme(legend.position=c(.7, .3)) + geom_abline(aes(intercept=c(.5, .9), slope=0), lty=2)
 ```
 
-![plot of chunk varianceEstimatesFigureS4](figure/varianceEstimatesFigureS4-1.png) 
+![](BNCAnalysis_files/figure-html/varianceEstimatesFigureS4-1.png) 
 
 #### Remark
 Since there is no manifest variable that explains the "technical" variance that BNC subtract in their calculations, we think that it makes more sense to consider the undeflated estimates, since these represent the gene expression values that experimenters must use in practice, until a factor can be identified as a manifest variable for the technical variability.
@@ -186,7 +181,7 @@ We also observe that the cell cycle phase of a cell is correlated with `geomsize
 ggpairs(mescPca$pcPairs, color='cycle_class')
 ```
 
-![plot of chunk plotmescpca](figure/plotmescpca-1.png) 
+![](BNCAnalysis_files/figure-html/plotmescpca-1.png) 
 
 ### PCA on Uncorrected Tcells
 In the Tcells, we again see that PC1 one is highly correlated with geometric size (`geomsize`) and the `panama`  factor.
@@ -196,7 +191,7 @@ tcpca <- getPCA(T_cell_matrix, TcellCdat[,c('panama', 'clusterid')])
 ggpairs(tcpca$pcPairs, columns=c(1:5), color='clusterid')
 ```
 
-![plot of chunk plotTcpca](figure/plotTcpca-1.png) 
+![](BNCAnalysis_files/figure-html/plotTcpca-1.png) 
 
 
 ## Percentage variance due to PC1
@@ -210,10 +205,10 @@ knitr::kable(varExplained)
 
 
 
-|data set | PC1 Variance Explained|
-|:--------|----------------------:|
-|mESC     |              0.0892713|
-|T-cell   |              0.2895370|
+data set    PC1 Variance Explained
+---------  -----------------------
+mESC                     0.0892713
+T-cell                   0.2895370
 
 ### Remark on T-cell clustering
 The T-cell clustering reported in the corrected T-cell data appears to depend substantially on the dimension reduction method used.  We are unable to replicate the clustering in the corrected or uncorrected data using linear PCA, or non-linear t-stochastic neighborhood embedding.  As the exact software version and parameters BNC used for the 'non-linear PCA' were not provided, we didn't attempt to apply that algorithm.
@@ -228,7 +223,7 @@ qp2 <- qp %+% tcpca$pcPairs + ggtitle('PCA Uncorrected')
 grid.arrange(qp1, qp2)
 ```
 
-![plot of chunk PCAforClusters](figure/PCAforClusters-1.png) 
+![](BNCAnalysis_files/figure-html/PCAforClusters-1.png) 
 
 We also try to do the same using `t-SNE` as implemented in the `Rtsne` package, which is a non-linear dimension reduction technique, which has been successfully applied to single-cell data.
 
@@ -243,7 +238,7 @@ qp4 <- qptsne + ggtitle('TSNE Uncorrected')
 grid.arrange(qp3, qp4)
 ```
 
-![plot of chunk TSNEforClusters](figure/TSNEforClusters-1.png) 
+![](BNCAnalysis_files/figure-html/TSNEforClusters-1.png) 
 
 
 ## Relationship between `geomsize`, `panama` and cell cycle
@@ -262,12 +257,12 @@ knitr::kable(data.frame(Model=models, 'R^2' = R2, Subset=names(Subset), check.na
 
 
 
-|Model                   |       R^2|Subset |
-|:-----------------------|---------:|:------|
-|panama ~ cycle_class    | 0.6479790|all    |
-|panama ~ geomsizeUncorr | 0.9217106|G1     |
-|panama ~ geomsizeUncorr | 0.7447921|S      |
-|panama ~ geomsizeUncorr | 0.8824271|G2M    |
+Model                            R^2  Subset 
+------------------------  ----------  -------
+panama ~ cycle_class       0.6479790  all    
+panama ~ geomsizeUncorr    0.9217106  G1     
+panama ~ geomsizeUncorr    0.7447921  S      
+panama ~ geomsizeUncorr    0.8824271  G2M    
 
 ### Comparison of discrimant power of `geomsize` and `panama`
 The comparison can also be inverted.  Using proportional odds logistic regression to classify cells by their geometric size and/or panama factor, we find modestly better performance using `panama`.  In both cases, the error rate exceeds 25%.  The S phase cells are especially resistant to classification.
@@ -285,13 +280,11 @@ tpanama <- table(predict(ppanama), mescCdat$cycle_class)
 knitr::kable(tgeom)
 ```
 
-
-
-|    | G1|  S| G2M|
-|:---|--:|--:|---:|
-|G1  | 44| 11|   0|
-|S   | 12| 28|  23|
-|G2M |  3| 19|  42|
+       G1    S   G2M
+----  ---  ---  ----
+G1     44   11     0
+S      12   28    23
+G2M     3   19    42
 
 `panama` has a error rate of 0.2912088 and confusion matrix:
 
@@ -299,13 +292,11 @@ knitr::kable(tgeom)
 knitr::kable(tpanama)
 ```
 
-
-
-|    | G1|  S| G2M|
-|:---|--:|--:|---:|
-|G1  | 46| 12|   0|
-|S   | 12| 33|  15|
-|G2M |  1| 13|  50|
+       G1    S   G2M
+----  ---  ---  ----
+G1     46   12     0
+S      12   33    15
+G2M     1   13    50
 
 The heavy dependence of `panama` on geometric size means that the classificiation power of panama is heavily dependent on geometric size being a reasonable instrument for cell cycle, which is assumption that has not been thoroughly tested.
 
@@ -349,28 +340,28 @@ knitr::kable(resFDR[1:20,list(Direction, FDR, totalrank, set)])
 
 
 
-| Direction|       FDR| totalrank|set                                                                                      |
-|---------:|---------:|---------:|:----------------------------------------------------------------------------------------|
-|        -1| 0.0000036|         1|REACTOME_MITOTIC_PROMETAPHASE                                                            |
-|        -1| 0.0000153|         2|REACTOME_E2F_MEDIATED_REGULATION_OF_DNA_REPLICATION                                      |
-|        -1| 0.0000346|         3|REACTOME_DEPOSITION_OF_NEW_CENPA_CONTAINING_NUCLEOSOMES_AT_THE_CENTROMERE                |
-|        -1| 0.0000346|         4|REACTOME_G2_M_CHECKPOINTS                                                                |
-|        -1| 0.0000951|         5|REACTOME_G1_S_SPECIFIC_TRANSCRIPTION                                                     |
-|        -1| 0.0002130|         6|REACTOME_CELL_CYCLE                                                                      |
-|        -1| 0.0002834|         7|REACTOME_CHROMOSOME_MAINTENANCE                                                          |
-|        -1| 0.0015164|         8|REACTOME_ACTIVATION_OF_ATR_IN_RESPONSE_TO_REPLICATION_STRESS                             |
-|        -1| 0.0015164|         9|REACTOME_DNA_REPLICATION                                                                 |
-|        -1| 0.0015164|        10|REACTOME_CELL_CYCLE_MITOTIC                                                              |
-|        -1| 0.0015164|        11|REACTOME_KINESINS                                                                        |
-|        -1| 0.0015164|        12|REACTOME_MITOTIC_M_M_G1_PHASES                                                           |
-|        -1| 0.0018450|        13|REACTOME_DOUBLE_STRAND_BREAK_REPAIR                                                      |
-|        -1| 0.0020784|        14|REACTOME_CYCLIN_A_B1_ASSOCIATED_EVENTS_DURING_G2_M_TRANSITION                            |
-|        -1| 0.0032273|        15|REACTOME_G2_M_DNA_DAMAGE_CHECKPOINT                                                      |
-|        -1| 0.0037052|        16|REACTOME_FANCONI_ANEMIA_PATHWAY                                                          |
-|        -1| 0.0037108|        17|REACTOME_ACTIVATION_OF_THE_PRE_REPLICATIVE_COMPLEX                                       |
-|        -1| 0.0048701|        18|REACTOME_HOMOLOGOUS_RECOMBINATION_REPAIR_OF_REPLICATION_INDEPENDENT_DOUBLE_STRAND_BREAKS |
-|        -1| 0.0061528|        19|REACTOME_APC_CDC20_MEDIATED_DEGRADATION_OF_NEK2A                                         |
-|        -1| 0.0089812|        20|REACTOME_E2F_ENABLED_INHIBITION_OF_PRE_REPLICATION_COMPLEX_FORMATION                     |
+ Direction         FDR   totalrank  set                                                                                      
+----------  ----------  ----------  -----------------------------------------------------------------------------------------
+        -1   0.0000036           1  REACTOME_MITOTIC_PROMETAPHASE                                                            
+        -1   0.0000153           2  REACTOME_E2F_MEDIATED_REGULATION_OF_DNA_REPLICATION                                      
+        -1   0.0000346           3  REACTOME_DEPOSITION_OF_NEW_CENPA_CONTAINING_NUCLEOSOMES_AT_THE_CENTROMERE                
+        -1   0.0000346           4  REACTOME_G2_M_CHECKPOINTS                                                                
+        -1   0.0000951           5  REACTOME_G1_S_SPECIFIC_TRANSCRIPTION                                                     
+        -1   0.0002130           6  REACTOME_CELL_CYCLE                                                                      
+        -1   0.0002834           7  REACTOME_CHROMOSOME_MAINTENANCE                                                          
+        -1   0.0015164           8  REACTOME_ACTIVATION_OF_ATR_IN_RESPONSE_TO_REPLICATION_STRESS                             
+        -1   0.0015164           9  REACTOME_DNA_REPLICATION                                                                 
+        -1   0.0015164          10  REACTOME_CELL_CYCLE_MITOTIC                                                              
+        -1   0.0015164          11  REACTOME_KINESINS                                                                        
+        -1   0.0015164          12  REACTOME_MITOTIC_M_M_G1_PHASES                                                           
+        -1   0.0018450          13  REACTOME_DOUBLE_STRAND_BREAK_REPAIR                                                      
+        -1   0.0020784          14  REACTOME_CYCLIN_A_B1_ASSOCIATED_EVENTS_DURING_G2_M_TRANSITION                            
+        -1   0.0032273          15  REACTOME_G2_M_DNA_DAMAGE_CHECKPOINT                                                      
+        -1   0.0037052          16  REACTOME_FANCONI_ANEMIA_PATHWAY                                                          
+        -1   0.0037108          17  REACTOME_ACTIVATION_OF_THE_PRE_REPLICATIVE_COMPLEX                                       
+        -1   0.0048701          18  REACTOME_HOMOLOGOUS_RECOMBINATION_REPAIR_OF_REPLICATION_INDEPENDENT_DOUBLE_STRAND_BREAKS 
+        -1   0.0061528          19  REACTOME_APC_CDC20_MEDIATED_DEGRADATION_OF_NEK2A                                         
+        -1   0.0089812          20  REACTOME_E2F_ENABLED_INHIBITION_OF_PRE_REPLICATION_COMPLEX_FORMATION                     
 
 
 ## Session Info
@@ -381,38 +372,31 @@ sessionInfo()
 ```
 
 ```
-## R version 3.1.3 (2015-03-09)
-## Platform: x86_64-pc-linux-gnu (64-bit)
-## Running under: Ubuntu 14.04.1 LTS
+## R version 3.1.2 (2014-10-31)
+## Platform: x86_64-apple-darwin14.0.0 (64-bit)
 ## 
 ## locale:
-##  [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C              
-##  [3] LC_TIME=en_US.UTF-8        LC_COLLATE=en_US.UTF-8    
-##  [5] LC_MONETARY=en_US.UTF-8    LC_MESSAGES=en_US.UTF-8   
-##  [7] LC_PAPER=en_US.UTF-8       LC_NAME=C                 
-##  [9] LC_ADDRESS=C               LC_TELEPHONE=C            
-## [11] LC_MEASUREMENT=en_US.UTF-8 LC_IDENTIFICATION=C       
+## [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
 ## 
 ## attached base packages:
 ##  [1] parallel  stats4    grid      stats     graphics  grDevices utils    
 ##  [8] datasets  methods   base     
 ## 
 ## other attached packages:
-##  [1] BiocInstaller_1.16.1 MASS_7.3-39          Rtsne_0.9           
-##  [4] stringr_0.6.2        GSEABase_1.28.0      graph_1.44.1        
-##  [7] annotate_1.44.0      XML_3.98-1.1         limma_3.22.6        
-## [10] org.Mm.eg.db_3.0.0   RSQLite_1.0.0        DBI_0.3.1           
-## [13] AnnotationDbi_1.28.1 GenomeInfoDb_1.2.4   IRanges_2.0.1       
-## [16] S4Vectors_0.4.0      Biobase_2.26.0       BiocGenerics_0.12.1 
-## [19] gridExtra_0.9.1      gdata_2.13.3         GGally_0.5.0        
-## [22] ggplot2_1.0.0        data.table_1.9.4     knitr_1.9           
-## [25] devtools_1.7.0      
+##  [1] MASS_7.3-40          Rtsne_0.9            stringr_0.6.2       
+##  [4] GSEABase_1.28.0      graph_1.44.1         annotate_1.44.0     
+##  [7] XML_3.98-1.1         limma_3.22.7         org.Mm.eg.db_3.0.0  
+## [10] RSQLite_1.0.0        DBI_0.3.1            AnnotationDbi_1.28.2
+## [13] GenomeInfoDb_1.2.4   IRanges_2.0.1        S4Vectors_0.4.0     
+## [16] Biobase_2.26.0       BiocGenerics_0.12.1  gridExtra_0.9.1     
+## [19] gdata_2.13.3         GGally_0.5.0         ggplot2_1.0.1       
+## [22] data.table_1.9.4    
 ## 
 ## loaded via a namespace (and not attached):
-##  [1] chron_2.3-45     codetools_0.2-11 colorspace_1.2-5 compiler_3.1.3  
-##  [5] digest_0.6.8     evaluate_0.5.5   formatR_1.0      gtable_0.1.2    
-##  [9] gtools_3.4.1     markdown_0.7.4   mime_0.2         munsell_0.4.2   
+##  [1] chron_2.3-45     codetools_0.2-11 colorspace_1.2-6 digest_0.6.8    
+##  [5] evaluate_0.5.5   formatR_1.0      gtable_0.1.2     gtools_3.4.1    
+##  [9] htmltools_0.2.6  knitr_1.9        labeling_0.3     munsell_0.4.2   
 ## [13] plyr_1.8.1       proto_0.3-10     Rcpp_0.11.5      reshape_0.8.5   
-## [17] reshape2_1.4.1   scales_0.2.4     tcltk_3.1.3      tools_3.1.3     
-## [21] xtable_1.7-4
+## [17] reshape2_1.4.1   rmarkdown_0.5.1  scales_0.2.4     tools_3.1.2     
+## [21] xtable_1.7-4     yaml_2.1.13
 ```

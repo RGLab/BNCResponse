@@ -1,12 +1,15 @@
 ---
 output:
-  html_document:
-    keep_md: yes
+knitrBootstrap::bootstrap_document:
+title: Response to Buettner, Natarajan "Computational analysis of cell-to-cell heterogeneity in single-cell RNA-sequencing data reveals hidden subpopulations of cells"
+author: 
+- Andrew McDavid
+- Greg Finak
+- Raphael Gottardo
+- Fred Hutchinson Cancer Research Center
+date:  "`r format(Sys.time(), '%d %B, %Y')`"
+keep_md: yes
 ---
-# Response to Buettner, Natarajan "Computational analysis of cell-to-cell heterogeneity in single-cell RNA-sequencing data reveals hidden subpopulations of cells"
-### Andrew McDavid, Raphael Gottardo, Greg Finak
-#### Fred Hutchinson Cancer Research Center
-#### 21 March 2015
 <!-- using knitrBootstrap::knit_bootstrap -->
 ```{r libraries, echo=TRUE, error=FALSE, cache=FALSE, echo=FALSE}
 knitr::opts_chunk$set(message=FALSE, error=FALSE, warning=FALSE, cache=TRUE, auto.dep=TRUE, echo=TRUE)
