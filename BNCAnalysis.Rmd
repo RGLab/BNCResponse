@@ -1,10 +1,16 @@
+---
+output:
+  html_document:
+    keep_md: yes
+---
 # Response to Buettner, Natarajan "Computational analysis of cell-to-cell heterogeneity in single-cell RNA-sequencing data reveals hidden subpopulations of cells"
 ### Andrew McDavid, Raphael Gottardo, Greg Finak
 #### Fred Hutchinson Cancer Research Center
 #### 9 March 2015
 <!-- using knitrBootstrap::knit_bootstrap -->
 ```{r libraries, echo=TRUE, error=FALSE, cache=FALSE, echo=FALSE}
-opts_chunk$set(message=FALSE, error=FALSE, warning=FALSE, cache=TRUE, auto.dep=TRUE, echo=TRUE)
+knitr:::opts_chunk$set(message=FALSE, error=FALSE, warning=FALSE, cache=TRUE, auto.dep=TRUE, echo=TRUE)
+suppressPackageStartupMessages({
 library(data.table)
 library(ggplot2)
 library(GGally)
@@ -17,6 +23,7 @@ library(GSEABase)
 library(Biobase)
 library(stringr)
 library(Rtsne)
+})
 ```
 
 ## Loading mESC data
@@ -130,7 +137,7 @@ devSum <- devModels[,{
     list('50%'=Q[1], '90%'=Q[2], Ngenes=.N)
 }, keyby=list(ccRanked)]
 
-kable(devSum)
+knitr::kable(devSum)
 ```
 
 ### Comparing to Supplementary Figure 4b
@@ -149,6 +156,7 @@ countsBelow <- cumsum(counts)
 figureData <- data.frame(R2, countsBelow, pctBelow=countsBelow/max(countsBelow), source='From Figure S4b')
 ggplot()+stat_ecdf(data=devModels, mapping=aes(x=pctDev, col=ccRanked)) +geom_line(data=figureData, mapping=aes(x=R2, y=pctBelow, col=source)) + xlab('% R^2 due to cell cycle') + ylab('Cumulative Distribution') + scale_color_discrete("Source") + theme(legend.position=c(.7, .3)) + geom_abline(aes(intercept=c(.5, .9), slope=0), lty=2)
 ```
+
 #### Remark
 Since there is no manifest variable that explains the "technical" variance that BNC subtract in their calculations, we think that it makes more sense to consider the undeflated estimates, since these represent the gene expression values that experimenters must use in practice, until a factor can be identified as a manifest variable for the technical variability.
 
@@ -189,7 +197,7 @@ ggpairs(tcpca$pcPairs, columns=c(1:5), color='clusterid')
 varExplained <- data.frame('data set'=c('mESC', 'T-cell'),
                            'PC1 Variance Explained'=c(mescPca$varianceExplained[1],
                                tcpca$varianceExplained[1]), check.names=F)
-kable(varExplained) 
+knitr::kable(varExplained) 
 ```
 
 ### Remark on T-cell clustering
@@ -230,7 +238,7 @@ R2duetoCC <- sapply(models, function(m){
     ccss/totalss
 })
 
-kable(data.frame(Model=models, 'R^2 due to cycle class' = R2duetoCC, check.names=FALSE), row.names=FALSE)
+knitr::kable(data.frame(Model=models, 'R^2 due to cycle class' = R2duetoCC, check.names=FALSE), row.names=FALSE)
 
 ```
 
@@ -266,7 +274,7 @@ In the `r nrow(resFDR)` modules with a FDR-q value 5% or less, a substantial num
 
 Among the top 20 modules, there is little suggestion of enrichment for immue-related modules.  Many modules relate to cell cycling.
 ```{r, results='asis'}
-kable(resFDR[1:20,list(Direction, FDR, totalrank, set)]) 
+knitr::kable(resFDR[1:20,list(Direction, FDR, totalrank, set)]) 
 ```
 
 
