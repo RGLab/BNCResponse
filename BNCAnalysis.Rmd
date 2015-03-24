@@ -1,10 +1,11 @@
 # Response to Buettner, Natarajan "Computational analysis of cell-to-cell heterogeneity in single-cell RNA-sequencing data reveals hidden subpopulations of cells"
 ### Andrew McDavid, Raphael Gottardo, Greg Finak
 #### Fred Hutchinson Cancer Research Center
-#### 9 March 2015
+#### 21 March 2015
 <!-- using knitrBootstrap::knit_bootstrap -->
 ```{r libraries, echo=TRUE, error=FALSE, cache=FALSE, echo=FALSE}
-opts_chunk$set(message=FALSE, error=FALSE, warning=FALSE, cache=TRUE, auto.dep=TRUE, echo=TRUE)
+knitr::opts_chunk$set(message=FALSE, error=FALSE, warning=FALSE, cache=TRUE, auto.dep=TRUE, echo=TRUE)
+suppressPackageStartupMessages({
 library(data.table)
 library(ggplot2)
 library(GGally)
@@ -17,6 +18,8 @@ library(GSEABase)
 library(Biobase)
 library(stringr)
 library(Rtsne)
+library(MASS)
+  })
 ```
 
 ## Loading mESC data
@@ -130,7 +133,7 @@ devSum <- devModels[,{
     list('50%'=Q[1], '90%'=Q[2], Ngenes=.N)
 }, keyby=list(ccRanked)]
 
-kable(devSum)
+knitr::kable(devSum)
 ```
 
 ### Comparing to Supplementary Figure 4b
@@ -189,7 +192,7 @@ ggpairs(tcpca$pcPairs, columns=c(1:5), color='clusterid')
 varExplained <- data.frame('data set'=c('mESC', 'T-cell'),
                            'PC1 Variance Explained'=c(mescPca$varianceExplained[1],
                                tcpca$varianceExplained[1]), check.names=F)
-kable(varExplained) 
+knitr::kable(varExplained) 
 ```
 
 ### Remark on T-cell clustering
@@ -219,21 +222,39 @@ grid.arrange(qp3, qp4)
 
 
 ## Relationship between `geomsize`, `panama` and cell cycle
-From the plots of the PCA in mESC, we observe that average geometric size and average panama factor both depend on the cell cycle.  Here we formally consider how much cell cycle explains in these factors by considering a regression of cell cycle on `geomsizeUncorr` (geometric size in uncorrected data) and cell cycle on `panama`.
+From the plots of the PCA in mESC, we observe that average geometric size and average panama factor both depend on the cell cycle.  Here we formally consider how much variance cell cycle explains in these factors by comparing the $R^2$ due to cell cycle on `panama` versus the $R^2$ due to geometric size, within each cell cycle.
 ```{r libsizepanama, results='asis'}
-models <- c('geomsizeUncorr ~ cycle_class', 'panama ~ cycle_class', 'panama ~ geomsizeUncorr +cycle_class')
-R2duetoCC <- sapply(models, function(m){
-    l <- lm(as.formula(m), data=mescCdat)
-    dr <- anova(l)
-    totalss <- sum(dr[,'Sum Sq'])
-    ccss <- sum(dr['cycle_class', 'Sum Sq'])
-    ccss/totalss
+models <- c('panama ~ cycle_class', 'panama ~ geomsizeUncorr', 'panama ~ geomsizeUncorr', 'panama ~ geomsizeUncorr')
+Subset <- list('all'=c('G1', 'S', 'G2M'), G1='G1', S='S', G2M='G2M')
+R2 <- sapply(seq_along(models), function(i){
+    l <- lm(as.formula(models[i]), data=mescCdat, subset=cycle_class %in% Subset[[i]])
+    summary(l)$r.squared
 })
 
-kable(data.frame(Model=models, 'R^2 due to cycle class' = R2duetoCC, check.names=FALSE), row.names=FALSE)
+knitr::kable(data.frame(Model=models, 'R^2' = R2, Subset=names(Subset), check.names=FALSE), row.names=FALSE)
 
 ```
 
+### Comparison of discrimant power of `geomsize` and `panama`
+The comparison can also be inverted.  Using proportional odds logistic regression to classify cells by their geometric size and/or panama factor, we find modestly better performance using `panama`.  In both cases, the error rate exceeds 25%.  The S phase cells are especially resistant to classification.
+```{r libsizepanamapolr}
+## scale geomsize to prevent unfriendly numerics
+pgeom <- polr(cycle_class ~ scale(geomsizeUncorr), data=mescCdat)
+ppanama <- update(pgeom, . ~  panama)
+tgeom <- table(predict(pgeom), mescCdat$cycle_class)
+tpanama <- table(predict(ppanama), mescCdat$cycle_class)
+```
+`geomsize` has a error rate of `r 1-sum(diag(tgeom))/sum(tgeom)` and confusion matrix:
+```{r, results='asis'}
+knitr::kable(tgeom)
+```
+
+`panama` has a error rate of `r 1-sum(diag(tpanama))/sum(tpanama)` and confusion matrix:
+```{r, results='asis'}
+knitr::kable(tpanama)
+```
+
+The heavy dependence of `panama` on geometric size means that the classificiation power of panama is heavily dependent on geometric size being a reasonable instrument for cell cycle, which is assumption that has not been thoroughly tested.
 
 ## Gene Set Enrichment Analysis using Corrected Data
 To conclude our analysis, we investigated if the scLVM factor would be successful in eliminating cell cycle signal when testing for differences between the T-cell clusters.
@@ -266,7 +287,7 @@ In the `r nrow(resFDR)` modules with a FDR-q value 5% or less, a substantial num
 
 Among the top 20 modules, there is little suggestion of enrichment for immue-related modules.  Many modules relate to cell cycling.
 ```{r, results='asis'}
-kable(resFDR[1:20,list(Direction, FDR, totalrank, set)]) 
+knitr::kable(resFDR[1:20,list(Direction, FDR, totalrank, set)]) 
 ```
 
 
