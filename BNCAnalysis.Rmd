@@ -11,7 +11,7 @@ date:  "`r format(Sys.time(), '%d %B, %Y')`"
 keep_md: yes
 ---
 <!-- using knitrBootstrap::knit_bootstrap -->
-```{r libraries, echo=TRUE, error=FALSE, cache=FALSE, echo=FALSE}
+```{r libraries, echo=TRUE, error=FALSE, cache=FALSE, echo=FALSE,warning=FALSE}
 knitr::opts_chunk$set(message=FALSE, error=FALSE, warning=FALSE, cache=TRUE, auto.dep=TRUE, echo=TRUE)
 suppressPackageStartupMessages({
 library(data.table)
@@ -27,6 +27,7 @@ library(Biobase)
 library(stringr)
 library(Rtsne)
 library(MASS)
+library(reshape2)
 })
 ```
 
@@ -58,6 +59,7 @@ setkey(fdat, symbol)
 ```
 
 Now join with symbols provided.  Some symbols map to multiple ensembl ids--we'll just take the first one listed.
+We define the **Ranked** set of genes to be genes with cell cycle annotation, which BNC used to calculate the scLVM factor.  The **Unranked** set of genes are all others.
 ```{r}
 mescFdat <- fdat[colnames(mesc),,mult='first']
 mescFdat <- mescFdat[,ccRanked:=factor((ensembl_id %in% ccgenes), labels=c('FALSE'='Unranked', 'TRUE'='Ranked'))]
@@ -210,7 +212,7 @@ The T-cell clustering reported in the corrected T-cell data appears to depend su
 Using ordinary PCA, we found instead that the GATA3 `cluster` variable corresponds roughly to a half-space defined by PC2, but since multiple modes are not evident, we would not detect distinct clusters, but rather a gradient of cells.
 ```{r PCAforClusters}
 tcCorrectedPCA <- getPCA(T_cell_matrix_corrected, TcellCdat[,c('panama', 'clusterid')])
-qp <- qplot(data=tcCorrectedPCA$pcPairs, x=PC1, y=PC2, col=clusterid, size=geomsize)+geom_density2d(aes(col=NA))
+qp <- ggplot(data = tcCorrectedPCA$pcPairs, aes(x = PC1, y = PC2)) + geom_density2d(color = "black",show_guide=FALSE) + geom_point(data = tcCorrectedPCA$pcPairs, aes(size = geomsize, color = clusterid))+scale_color_discrete("cluster id")+scale_size_continuous("geometric size")
 qp1 <- qp + ggtitle('PCA Corrected')
 qp2 <- qp %+% tcpca$pcPairs + ggtitle('PCA Uncorrected')
 grid.arrange(qp1, qp2)
@@ -221,9 +223,11 @@ We also try to do the same using `t-SNE` as implemented in the `Rtsne` package, 
 
 The figures above (PCA) and below (t-SNE) do now show any obvious clustering of the cells either before or after correction according to the clusters reported in BNC. An obvious grouping of the cells by geomsize is present.
 ```{r TSNEforClusters, results='hide'}
-tsne <- data.frame(tsne=Rtsne(T_cell_matrix, dims = 2, initial_dims = 50, perplexity = 20, theta = 0.5, check_duplicates = TRUE, pca = TRUE)$Y, geomsize=rowSums(T_cell_matrix))
-tsneCorr <- data.frame(tsne=Rtsne(T_cell_matrix_corrected, dims = 2, initial_dims = 50, perplexity = 20, theta = 0.5, check_duplicates = TRUE, pca = TRUE)$Y, geomsize=rowSums(T_cell_matrix_corrected)) 
-qptsne <- qplot(data=cbind(tsne, TcellCdat), x=tsne.1, y=tsne.2, col=clusterid, size=geomsize) +geom_density2d(aes(col=NA))
+#exact tsne, set theta=0
+tsne <- data.frame(tsne=Rtsne(T_cell_matrix, dims = 2, initial_dims = 50, perplexity = 20, theta = 0.0, check_duplicates = TRUE, pca = TRUE)$Y, geomsize=rowSums(T_cell_matrix))
+
+tsneCorr <- data.frame(tsne=Rtsne(T_cell_matrix_corrected, dims = 2, perplexity = 20, theta = 0.0, check_duplicates = TRUE, pca = TRUE)$Y, geomsize=rowSums(T_cell_matrix_corrected)) 
+qptsne <- qplot(data=cbind(tsne, TcellCdat), x=tsne.1, y=tsne.2, col=clusterid)+geom_density2d(aes(group=1),col="black",show_guide=FALSE)+geom_point(aes(size=geomsize))+scale_color_discrete("cluster id")+scale_size_continuous("geometric size")
 qp3 <- qptsne %+% cbind(tsneCorr, TcellCdat) + ggtitle('TSNE Corrected')
 qp4 <- qptsne + ggtitle('TSNE Uncorrected')
 grid.arrange(qp3, qp4)
@@ -262,7 +266,7 @@ knitr::kable(tgeom)
 knitr::kable(tpanama)
 ```
 
-The heavy dependence of `panama` on geometric size means that the classificiation power of panama is heavily dependent on geometric size being a reasonable instrument for cell cycle, which is assumption that has not been thoroughly tested.
+The heavy dependence of `panama` on geometric size means that the classificiation power of panama relies on geometric size being a reasonable instrument for cell cycle, which is an assumption that has not been thoroughly tested.
 
 ## Gene Set Enrichment Analysis using Corrected Data
 To conclude our analysis, we investigated if the scLVM factor would be successful in eliminating cell cycle signal when testing for differences between the T-cell clusters.
@@ -293,14 +297,38 @@ nFDR <- nrow(resFDR)
 ```
 In the `r nrow(resFDR)` modules with a FDR-q value 5% or less, a substantial number relate to cell cycle.
 
-Among the top 20 modules, there is little suggestion of enrichment for immue-related modules.  Many modules relate to cell cycling.
+Among the top 20 modules, there is little suggestion of enrichment for immue-related modules.  Many modules relate to cell cycle.
 ```{r, results='asis'}
-knitr::kable(resFDR[1:20,list(Direction, FDR, totalrank, set)]) 
+knitr::kable(resFDR[1:20,list(Direction, FDR, totalrank, set)])  
 ```
 
+The same is true when using the GO Biological Process modules. All 20 top modules are directly or indirectly (DNA repair or DNA replication) cell-cycle associated.
+
+```{r gobp}
+c5_set <- getGmt("data/c5.bp.v4.0.symbols.gmt")
+gene_ids <- geneIds(c5_set)
+## # Camera requires gene-indices
+design <- model.matrix(~clusterid, eSet)
+sets_indices <- ids2indices(gene_ids, toupper(rownames(eSet))) 
+res <- camera(eSet, sets_indices, design=design)
+```
+
+```{r topgenes_gobp, results='asis'}
+res$Direction <- ifelse(res$Direction=='Up', 1, -1)
+res$set <- row.names(res)
+setDT(res)
+setkey(res, FDR) 
+res <- res[,':='(totalrank=rank(PValue))]
+resFDR <- res[FDR<.05,] 
+nFDR <- nrow(resFDR)
+```
+
+```{r gobp_result, results='asis'}
+knitr::kable(resFDR[1:20,list(Direction, FDR, totalrank, set)])  
+```
 
 ## Session Info
-This was generated using
+This report was generated using
 ```{r}
 sessionInfo()
 ```
