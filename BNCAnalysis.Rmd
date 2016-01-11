@@ -12,7 +12,8 @@ keep_md: yes
 ---
 <!-- using knitrBootstrap::knit_bootstrap -->
 ```{r libraries, echo=TRUE, error=FALSE, cache=FALSE, echo=FALSE,warning=FALSE}
-knitr::opts_chunk$set(message=FALSE, error=FALSE, warning=FALSE, cache=TRUE, auto.dep=TRUE, echo=TRUE)
+knitr::opts_chunk$set(message=FALSE, error=FALSE, warning=FALSE, cache=TRUE, auto.dep=TRUE, echo=TRUE, tidy=TRUE, width.cutoff=50)
+options(digits=2)
 suppressPackageStartupMessages({
 library(data.table)
 library(ggplot2)
@@ -146,6 +147,8 @@ devSum <- devModels[,{
 knitr::kable(devSum)
 ```
 
+*Table 1: Variance attributable to cell cycle in median/90% ranked and unranked genes*
+
 ### Comparing to Supplementary Figure 4b
 We sought to compare our estimate to a description of these quantities in the paper.  We located an estimate of the effect of cell cycle by reading numbers off of figures S4b/S4d.
 
@@ -160,8 +163,13 @@ counts <- c(0, 7638, 1079, 483, 225, 97, 49)
 ## number of genes in bin and all bins below
 countsBelow <- cumsum(counts)
 figureData <- data.frame(R2, countsBelow, pctBelow=countsBelow/max(countsBelow), source='From Figure S4b')
+```
+
+```{r}
 ggplot()+stat_ecdf(data=devModels, mapping=aes(x=pctDev, col=ccRanked)) +geom_line(data=figureData, mapping=aes(x=R2, y=pctBelow, col=source)) + xlab('% R^2 due to cell cycle') + ylab('Cumulative Distribution') + scale_color_discrete("Source") + theme(legend.position=c(.7, .3)) + geom_abline(aes(intercept=c(.5, .9), slope=0), lty=2)
 ```
+
+*Figure 1: Cell cycle variability estimates*
 
 #### Remark
 Since there is no manifest variable that explains the "technical" variance that BNC subtract in their calculations, we think that it makes more sense to consider the undeflated estimates, since these represent the gene expression values that experimenters must use in practice, until a factor can be identified as a manifest variable for the technical variability.
@@ -184,18 +192,22 @@ mescPca <- getPCA(mesc, mescCdat[,c('cycle_class', 'panama')])
 
 We see that PC1 one is highly correlated with geometric size (`geomsize`) and the `panama` factor that we estimated.
 We also observe that the cell cycle phase of a cell is correlated with `geomsize`/PC1 and discuss that point at greater length below.
-```{r plotmescpca, fig.width=10, fig.height=10}
-ggpairs(mescPca$pcPairs, color='cycle_class')
+```{r plotmescpca, fig.width=10, fig.height=10, dev=c('png', 'pdf')}
+ggpairs(mescPca$pcPairs, colour='cycle_class')
 
 ```
+
+*Figure 2: PCA and geometric library size in mESC experiment*
 
 ### PCA on Uncorrected Tcells
 In the Tcells, we again see that PC1 one is highly correlated with geometric size (`geomsize`) and the `panama`  factor.
 ```{r plotTcpca, fig.width=10, fig.height=10}
 tcpca <- getPCA(T_cell_matrix, TcellCdat[,c('panama', 'clusterid')])
-ggpairs(tcpca$pcPairs, columns=c(1:5), color='clusterid')
+ggpairs(tcpca$pcPairs, columns=c(1:5), colour='clusterid')
 
 ```
+
+*Figure 3: PCA and geometric library size in Tcell experiment*
 
 
 ## Percentage variance due to PC1
@@ -205,6 +217,8 @@ varExplained <- data.frame('data set'=c('mESC', 'T-cell'),
                                tcpca$varianceExplained[1]), check.names=F)
 knitr::kable(varExplained) 
 ```
+
+*Table 2: PCA PC1 variance explained*
 
 ### Remark on T-cell clustering
 The T-cell clustering reported in the corrected T-cell data appears to depend substantially on the dimension reduction method used.  We are unable to replicate the clustering in the corrected or uncorrected data using linear PCA, or non-linear t-stochastic neighborhood embedding.  As the exact software version and parameters BNC used for the 'non-linear PCA' were not provided, we didn't attempt to apply that algorithm.
@@ -218,6 +232,8 @@ qp2 <- qp %+% tcpca$pcPairs + ggtitle('PCA Uncorrected')
 grid.arrange(qp1, qp2)
 
 ```
+
+*Figure 4: Looking for clusters in Tcells using PCA on corrected and uncorrected data*
 
 We also try to do the same using `t-SNE` as implemented in the `Rtsne` package, which is a non-linear dimension reduction technique, which has been successfully applied to single-cell data.
 
@@ -233,6 +249,9 @@ qp4 <- qptsne + ggtitle('TSNE Uncorrected')
 grid.arrange(qp3, qp4)
 ```
 
+*Figure 5: Looking for clusters in Tcells using t-SNE on corrected and uncorrected data*
+
+
 
 ## Relationship between `geomsize`, `panama` and cell cycle
 From the plots of the PCA in mESC, we observe that average geometric size and average panama factor both depend on the cell cycle.  Here we formally consider how much variance cell cycle explains in these factors by comparing the $R^2$ due to cell cycle on `panama` versus the $R^2$ due to geometric size, within each cell cycle.
@@ -246,6 +265,8 @@ R2 <- sapply(seq_along(models), function(i){
 
 knitr::kable(data.frame(Model=models, 'R^2' = R2, Subset=names(Subset), check.names=FALSE), row.names=FALSE)
 ```
+
+*Table 3: dependence of panama factor on cell cycle and geometric size*
 
 ### Comparison of discrimant power of `geomsize` and `panama`
 The comparison can also be inverted.  Using proportional odds logistic regression to classify cells by their geometric size and/or panama factor, we find modestly better performance using `panama`.  In both cases, the error rate exceeds 25%.  The S phase cells are especially resistant to classification.
@@ -261,10 +282,16 @@ tpanama <- table(predict(ppanama), mescCdat$cycle_class)
 knitr::kable(tgeom)
 ```
 
+*Table 4: cell cycle classification using geometric size*
+
+
 `panama` has a error rate of `r 1-sum(diag(tpanama))/sum(tpanama)` and confusion matrix:
 ```{r, results='asis'}
 knitr::kable(tpanama)
 ```
+
+*Table 5: cell cycle classification using panama*
+
 
 The heavy dependence of `panama` on geometric size means that the classificiation power of panama relies on geometric size being a reasonable instrument for cell cycle, which is an assumption that has not been thoroughly tested.
 
@@ -286,21 +313,30 @@ sets_indices <- ids2indices(gene_ids, toupper(rownames(eSet)))
 res <- camera(eSet, sets_indices, design=design)
 ```
 
+We'll define the following keywords as relating to cell cycle: cell cycle, cycling/cyclin (preceded by a word boundary), M, S, G0/1/2 (preceded and followed by word boundaries), replication/replicative, mitotic, mitosis, chrom (preceded by a word boundary).
+```{r}
+cycleKw <- '(CELL_CYCLE)|(_CYCLIN)|((_|^)M_)|((_|^)S_)|((_|^)G[012]+_)|REPLICATI|MITOTIC|MITOSIS|(_|^)CHROM'
+
+```
+
 ```{r topgenes, results='asis'}
 res$Direction <- ifelse(res$Direction=='Up', 1, -1)
 res$set <- row.names(res)
 setDT(res)
 setkey(res, FDR) 
 res <- res[,':='(totalrank=rank(PValue))]
+res <- res[,cycleKw:=str_detect(set, cycleKw)]
 resFDR <- res[FDR<.05,]
 nFDR <- nrow(resFDR)
 ```
 In the `r nrow(resFDR)` modules with a FDR-q value 5% or less, a substantial number relate to cell cycle.
 
-Among the top 20 modules, there is little suggestion of enrichment for immue-related modules.  Many modules relate to cell cycle.
+Among the top 20 modules, there is little suggestion of enrichment for immue-related modules.  Many modules relate to cell cycling.
 ```{r, results='asis'}
-knitr::kable(resFDR[1:20,list(Direction, FDR, totalrank, set)])  
+knitr::kable(resFDR[1:20,list(Direction, FDR, totalrank, substr(str_replace(set, 'REACTOME_', ''), 1, 40), cycleKw)])  
 ```
+
+*Table 6: gene set enrichment analysis using reactome modules on T cell clusters*
 
 The same is true when using the GO Biological Process modules. All 20 top modules are directly or indirectly (DNA repair or DNA replication) cell-cycle associated.
 
@@ -319,16 +355,49 @@ res$set <- row.names(res)
 setDT(res)
 setkey(res, FDR) 
 res <- res[,':='(totalrank=rank(PValue))]
+res <- res[,cycleKw:=str_detect(set, cycleKw)]  
 resFDR <- res[FDR<.05,] 
 nFDR <- nrow(resFDR)
 ```
 
 ```{r gobp_result, results='asis'}
-knitr::kable(resFDR[1:20,list(Direction, FDR, totalrank, set)])  
+knitr::kable(resFDR[1:20,list(Direction, FDR, totalrank, set, cycleKw)])  
 ```
+
+*Table 7: gene set enrichment analysis using GO-biological process modules on T cell clusters*
+
+### Module Diversity
+We considered if cell cycle annotation was over-represented in the Reactome or GO Biological Process modules.  The following function counts modules with any mention of keywords noted above, and then finds the overlap between genes defined in the keyword-containing modules and all other modules.
+```{r module_diversity}
+getCCMods <- function(set){
+    mods <-  data.table(melt(geneIds(set), value.name='geneid'))
+    setnames(mods, 'L1', 'module')
+    mods[,':='(isCC=str_detect(module, cycleKw),
+                   geneid=as.character(geneid))]
+    mods[,size:=.N,keyby=module]
+    nmods = mods[,.(nmods = length(unique(module))),keyby=isCC]
+    genes <- mods[,.(ccGene=any(isCC), .N),keyby=list(geneid)]
+    mods <- merge(genes, mods,by='geneid')
+    modsccgenes <- dcast.data.table(mods, module+isCC +size~ ccGene)
+    modsccgenes[,ccpct:=`TRUE`/size]
+    medianOverlap <- modsccgenes[,.(median=median(ccpct)),keyby=list(isCC)]
+    list(ccMod=nmods[isCC==TRUE,nmods],
+         totalMod=nmods[,sum(nmods)],
+         overlapCCPct=round(medianOverlap[isCC==FALSE,median]*100, 0), modsccgenes=modsccgenes)
+    }
+
+reactome <- getCCMods(c2_set)
+bp <- getCCMods(c5_set)
+```
+
+In the Reactome modules only `r reactome$ccMod` (out of `r reactome$totalMod`) modules had a keyword reflecting cell cycle. In the non-cycle set, the median non-annotated module included only `r reactome$overlapCCPct`% of genes with any annotation.
+
+In the GO-Biological Process modules these statistics were `r bp$ccMod`/`r bp$totalMod` and `r bp$overlapCCPct`%, respectively.
+
 
 ## Session Info
 This report was generated using
 ```{r}
 sessionInfo()
 ```
+as a pdf from source code available at https://github.com/RGLab/BNCResponse/blob/master/BNCAnalysis.Rmd .

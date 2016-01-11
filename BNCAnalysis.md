@@ -7,7 +7,7 @@ author:
 - Greg Finak
 - Raphael Gottardo
 - Fred Hutchinson Cancer Research Center
-date:  "28 July, 2015"
+date:  "29 December, 2015"
 keep_md: yes
 ---
 <!-- using knitrBootstrap::knit_bootstrap -->
@@ -50,7 +50,7 @@ mescFdat <- fdat[colnames(mesc),,mult='first']
 mescFdat <- mescFdat[,ccRanked:=factor((ensembl_id %in% ccgenes), labels=c('FALSE'='Unranked', 'TRUE'='Ranked'))]
 mescFdatDup <- fdat[colnames(mesc)]
 ```
-This affects 40 records.
+This affects 63 records.
 
 ## Loading mouse T-cell data
 We repeat the process as above.
@@ -141,8 +141,8 @@ knitr::kable(devSum)
 
 |ccRanked |      50%|      90%| Ngenes|
 |:--------|--------:|--------:|------:|
-|Unranked | 3.479381| 15.15893|   8994|
-|Ranked   | 7.968757| 26.93517|    609|
+|Unranked | 3.479555| 15.15740|   8995|
+|Ranked   | 7.992946| 27.02797|    608|
 
 ### Comparing to Supplementary Figure 4b
 We sought to compare our estimate to a description of these quantities in the paper.  We located an estimate of the effect of cell cycle by reading numbers off of figures S4b/S4d.
@@ -159,10 +159,15 @@ counts <- c(0, 7638, 1079, 483, 225, 97, 49)
 ## number of genes in bin and all bins below
 countsBelow <- cumsum(counts)
 figureData <- data.frame(R2, countsBelow, pctBelow=countsBelow/max(countsBelow), source='From Figure S4b')
+```
+
+
+```r
 ggplot()+stat_ecdf(data=devModels, mapping=aes(x=pctDev, col=ccRanked)) +geom_line(data=figureData, mapping=aes(x=R2, y=pctBelow, col=source)) + xlab('% R^2 due to cell cycle') + ylab('Cumulative Distribution') + scale_color_discrete("Source") + theme(legend.position=c(.7, .3)) + geom_abline(aes(intercept=c(.5, .9), slope=0), lty=2)
 ```
 
-![plot of chunk varianceEstimatesFigureS4](figure/varianceEstimatesFigureS4-1.png) 
+![plot of chunk unnamed-chunk-6](figure/unnamed-chunk-6-1.png) 
+*Figure 1: Cell cycle variability estimates*
 
 #### Remark
 Since there is no manifest variable that explains the "technical" variance that BNC subtract in their calculations, we think that it makes more sense to consider the undeflated estimates, since these represent the gene expression values that experimenters must use in practice, until a factor can be identified as a manifest variable for the technical variability.
@@ -192,6 +197,8 @@ ggpairs(mescPca$pcPairs, color='cycle_class')
 
 ![plot of chunk plotmescpca](figure/plotmescpca-1.png) 
 
+*Figure 2: PCA and geometric library size in mESC experiment*
+
 ### PCA on Uncorrected Tcells
 In the Tcells, we again see that PC1 one is highly correlated with geometric size (`geomsize`) and the `panama`  factor.
 
@@ -201,6 +208,8 @@ ggpairs(tcpca$pcPairs, columns=c(1:5), color='clusterid')
 ```
 
 ![plot of chunk plotTcpca](figure/plotTcpca-1.png) 
+
+*Figure 3: PCA and geometric library size in Tcell experiment*
 
 
 ## Percentage variance due to PC1
@@ -218,6 +227,7 @@ knitr::kable(varExplained)
 |:--------|----------------------:|
 |mESC     |              0.0892713|
 |T-cell   |              0.2895370|
+*Table 1: PCA PC1 variance explained*
 
 ### Remark on T-cell clustering
 The T-cell clustering reported in the corrected T-cell data appears to depend substantially on the dimension reduction method used.  We are unable to replicate the clustering in the corrected or uncorrected data using linear PCA, or non-linear t-stochastic neighborhood embedding.  As the exact software version and parameters BNC used for the 'non-linear PCA' were not provided, we didn't attempt to apply that algorithm.
@@ -233,6 +243,8 @@ grid.arrange(qp1, qp2)
 ```
 
 ![plot of chunk PCAforClusters](figure/PCAforClusters-1.png) 
+
+*Figure 4: Looking for clusters in Tcells using PCA on corrected and uncorrected data*
 
 We also try to do the same using `t-SNE` as implemented in the `Rtsne` package, which is a non-linear dimension reduction technique, which has been successfully applied to single-cell data.
 
@@ -250,6 +262,9 @@ grid.arrange(qp3, qp4)
 ```
 
 ![plot of chunk TSNEforClusters](figure/TSNEforClusters-1.png) 
+
+*Figure 5: Looking for clusters in Tcells using t-SNE on corrected and uncorrected data*
+
 
 
 ## Relationship between `geomsize`, `panama` and cell cycle
@@ -274,6 +289,7 @@ knitr::kable(data.frame(Model=models, 'R^2' = R2, Subset=names(Subset), check.na
 |panama ~ geomsizeUncorr | 0.9217106|G1     |
 |panama ~ geomsizeUncorr | 0.7447921|S      |
 |panama ~ geomsizeUncorr | 0.8824271|G2M    |
+*Table 2: dependence of panama factor on cell cycle and geometric size*
 
 ### Comparison of discrimant power of `geomsize` and `panama`
 The comparison can also be inverted.  Using proportional odds logistic regression to classify cells by their geometric size and/or panama factor, we find modestly better performance using `panama`.  In both cases, the error rate exceeds 25%.  The S phase cells are especially resistant to classification.
@@ -298,6 +314,8 @@ knitr::kable(tgeom)
 |G1  | 44| 11|   0|
 |S   | 12| 28|  23|
 |G2M |  3| 19|  42|
+*Table 3: cell cycle classification using geometric size*
+
 
 `panama` has a error rate of 0.2912088 and confusion matrix:
 
@@ -312,6 +330,8 @@ knitr::kable(tpanama)
 |G1  | 46| 12|   0|
 |S   | 12| 33|  15|
 |G2M |  1| 13|  50|
+*Table 4: cell cycle classification using panama*
+
 
 The heavy dependence of `panama` on geometric size means that the classificiation power of panama relies on geometric size being a reasonable instrument for cell cycle, which is an assumption that has not been thoroughly tested.
 
@@ -335,12 +355,6 @@ sets_indices <- ids2indices(gene_ids, toupper(rownames(eSet)))
 res <- camera(eSet, sets_indices, design=design)
 ```
 
-We'll define the following keywords as relating to cell cycle.
-
-```r
-cycleKw <- '(CELL_CYCLE)|(_CYCLIN)|((_|^)M_)|((_|^)S_)|((_|^)G[012]+_)|REPLICATI|MITOTIC|MITOSIS|(_|^)CHROM'
-```
-
 
 ```r
 res$Direction <- ifelse(res$Direction=='Up', 1, -1)
@@ -348,44 +362,44 @@ res$set <- row.names(res)
 setDT(res)
 setkey(res, FDR) 
 res <- res[,':='(totalrank=rank(PValue))]
-res <- res[,cycleKw:=str_detect(set, cycleKw)]
 resFDR <- res[FDR<.05,]
 nFDR <- nrow(resFDR)
 ```
 In the 34 modules with a FDR-q value 5% or less, a substantial number relate to cell cycle.
 
-Among the top 20 modules, there is little suggestion of enrichment for immue-related modules.  Many modules relate to cell cycling.
+Among the top 20 modules, there is little suggestion of enrichment for immue-related modules.  Many modules relate to cell cycle.
 
 ```r
-knitr::kable(resFDR[1:20,list(Direction, FDR, totalrank, set, cycleKw)])  
+knitr::kable(resFDR[1:20,list(Direction, FDR, totalrank, set)])  
 ```
 
 
 
-| Direction|       FDR| totalrank|set                                                                                      |cycleKw |
-|---------:|---------:|---------:|:----------------------------------------------------------------------------------------|:-------|
-|        -1| 0.0000036|         1|REACTOME_MITOTIC_PROMETAPHASE                                                            |TRUE    |
-|        -1| 0.0000153|         2|REACTOME_E2F_MEDIATED_REGULATION_OF_DNA_REPLICATION                                      |TRUE    |
-|        -1| 0.0000346|         3|REACTOME_DEPOSITION_OF_NEW_CENPA_CONTAINING_NUCLEOSOMES_AT_THE_CENTROMERE                |FALSE   |
-|        -1| 0.0000346|         4|REACTOME_G2_M_CHECKPOINTS                                                                |TRUE    |
-|        -1| 0.0000951|         5|REACTOME_G1_S_SPECIFIC_TRANSCRIPTION                                                     |TRUE    |
-|        -1| 0.0002130|         6|REACTOME_CELL_CYCLE                                                                      |TRUE    |
-|        -1| 0.0002834|         7|REACTOME_CHROMOSOME_MAINTENANCE                                                          |TRUE    |
-|        -1| 0.0015164|         8|REACTOME_ACTIVATION_OF_ATR_IN_RESPONSE_TO_REPLICATION_STRESS                             |TRUE    |
-|        -1| 0.0015164|         9|REACTOME_DNA_REPLICATION                                                                 |TRUE    |
-|        -1| 0.0015164|        10|REACTOME_CELL_CYCLE_MITOTIC                                                              |TRUE    |
-|        -1| 0.0015164|        11|REACTOME_KINESINS                                                                        |FALSE   |
-|        -1| 0.0015164|        12|REACTOME_MITOTIC_M_M_G1_PHASES                                                           |TRUE    |
-|        -1| 0.0018450|        13|REACTOME_DOUBLE_STRAND_BREAK_REPAIR                                                      |FALSE   |
-|        -1| 0.0020784|        14|REACTOME_CYCLIN_A_B1_ASSOCIATED_EVENTS_DURING_G2_M_TRANSITION                            |TRUE    |
-|        -1| 0.0032273|        15|REACTOME_G2_M_DNA_DAMAGE_CHECKPOINT                                                      |TRUE    |
-|        -1| 0.0037052|        16|REACTOME_FANCONI_ANEMIA_PATHWAY                                                          |FALSE   |
-|        -1| 0.0037108|        17|REACTOME_ACTIVATION_OF_THE_PRE_REPLICATIVE_COMPLEX                                       |TRUE    |
-|        -1| 0.0048701|        18|REACTOME_HOMOLOGOUS_RECOMBINATION_REPAIR_OF_REPLICATION_INDEPENDENT_DOUBLE_STRAND_BREAKS |TRUE    |
-|        -1| 0.0061528|        19|REACTOME_APC_CDC20_MEDIATED_DEGRADATION_OF_NEK2A                                         |FALSE   |
-|        -1| 0.0089812|        20|REACTOME_E2F_ENABLED_INHIBITION_OF_PRE_REPLICATION_COMPLEX_FORMATION                     |TRUE    |
+| Direction|       FDR| totalrank|set                                                                                      |
+|---------:|---------:|---------:|:----------------------------------------------------------------------------------------|
+|        -1| 0.0000036|         1|REACTOME_MITOTIC_PROMETAPHASE                                                            |
+|        -1| 0.0000153|         2|REACTOME_E2F_MEDIATED_REGULATION_OF_DNA_REPLICATION                                      |
+|        -1| 0.0000346|         3|REACTOME_DEPOSITION_OF_NEW_CENPA_CONTAINING_NUCLEOSOMES_AT_THE_CENTROMERE                |
+|        -1| 0.0000346|         4|REACTOME_G2_M_CHECKPOINTS                                                                |
+|        -1| 0.0000951|         5|REACTOME_G1_S_SPECIFIC_TRANSCRIPTION                                                     |
+|        -1| 0.0002130|         6|REACTOME_CELL_CYCLE                                                                      |
+|        -1| 0.0002834|         7|REACTOME_CHROMOSOME_MAINTENANCE                                                          |
+|        -1| 0.0015164|         8|REACTOME_ACTIVATION_OF_ATR_IN_RESPONSE_TO_REPLICATION_STRESS                             |
+|        -1| 0.0015164|         9|REACTOME_DNA_REPLICATION                                                                 |
+|        -1| 0.0015164|        10|REACTOME_CELL_CYCLE_MITOTIC                                                              |
+|        -1| 0.0015164|        11|REACTOME_KINESINS                                                                        |
+|        -1| 0.0015164|        12|REACTOME_MITOTIC_M_M_G1_PHASES                                                           |
+|        -1| 0.0018450|        13|REACTOME_DOUBLE_STRAND_BREAK_REPAIR                                                      |
+|        -1| 0.0020784|        14|REACTOME_CYCLIN_A_B1_ASSOCIATED_EVENTS_DURING_G2_M_TRANSITION                            |
+|        -1| 0.0032273|        15|REACTOME_G2_M_DNA_DAMAGE_CHECKPOINT                                                      |
+|        -1| 0.0037052|        16|REACTOME_FANCONI_ANEMIA_PATHWAY                                                          |
+|        -1| 0.0037108|        17|REACTOME_ACTIVATION_OF_THE_PRE_REPLICATIVE_COMPLEX                                       |
+|        -1| 0.0048701|        18|REACTOME_HOMOLOGOUS_RECOMBINATION_REPAIR_OF_REPLICATION_INDEPENDENT_DOUBLE_STRAND_BREAKS |
+|        -1| 0.0061528|        19|REACTOME_APC_CDC20_MEDIATED_DEGRADATION_OF_NEK2A                                         |
+|        -1| 0.0089812|        20|REACTOME_E2F_ENABLED_INHIBITION_OF_PRE_REPLICATION_COMPLEX_FORMATION                     |
+*Table 5: gene set enrichment analysis using reactome modules on T cell clusters*
 
-The same is true when using the GO Biological Process modules. All 20 top modules are cell-cycle associated.
+The same is true when using the GO Biological Process modules. All 20 top modules are directly or indirectly (DNA repair or DNA replication) cell-cycle associated.
 
 
 ```r
@@ -404,69 +418,40 @@ res$set <- row.names(res)
 setDT(res)
 setkey(res, FDR) 
 res <- res[,':='(totalrank=rank(PValue))]
-res <- res[,cycleKw:=str_detect(set, cycleKw)]  
 resFDR <- res[FDR<.05,] 
 nFDR <- nrow(resFDR)
 ```
 
 
 ```r
-knitr::kable(resFDR[1:20,list(Direction, FDR, totalrank, set, cycleKw)])  
+knitr::kable(resFDR[1:20,list(Direction, FDR, totalrank, set)])  
 ```
 
 
 
-| Direction|       FDR| totalrank|set                                  |cycleKw |
-|---------:|---------:|---------:|:------------------------------------|:-------|
-|        -1| 0.0000001|         1|CELL_CYCLE_PROCESS                   |TRUE    |
-|        -1| 0.0000002|         2|CELL_CYCLE_PHASE                     |TRUE    |
-|        -1| 0.0000008|         3|M_PHASE                              |TRUE    |
-|        -1| 0.0000008|         4|MITOSIS                              |TRUE    |
-|        -1| 0.0000009|         5|MITOTIC_CELL_CYCLE                   |TRUE    |
-|        -1| 0.0000009|         6|SISTER_CHROMATID_SEGREGATION         |TRUE    |
-|        -1| 0.0000011|         7|MITOTIC_SISTER_CHROMATID_SEGREGATION |TRUE    |
-|        -1| 0.0000012|         8|M_PHASE_OF_MITOTIC_CELL_CYCLE        |TRUE    |
-|        -1| 0.0000056|         9|CELL_CYCLE_GO_0007049                |TRUE    |
-|        -1| 0.0000150|        10|CHROMOSOME_SEGREGATION               |TRUE    |
-|        -1| 0.0000225|        11|CELL_CYCLE_CHECKPOINT_GO_0000075     |TRUE    |
-|        -1| 0.0000385|        12|CYTOKINESIS                          |FALSE   |
-|        -1| 0.0000452|        13|REGULATION_OF_MITOSIS                |TRUE    |
-|        -1| 0.0001653|        14|CELL_DIVISION                        |FALSE   |
-|        -1| 0.0002503|        15|DNA_DEPENDENT_DNA_REPLICATION        |TRUE    |
-|        -1| 0.0004236|        16|CHROMOSOME_CONDENSATION              |TRUE    |
-|        -1| 0.0011016|        17|MITOTIC_CELL_CYCLE_CHECKPOINT        |TRUE    |
-|        -1| 0.0018225|        18|DNA_REPLICATION                      |TRUE    |
-|        -1| 0.0032980|        19|DNA_INTEGRITY_CHECKPOINT             |FALSE   |
-|        -1| 0.0057410|        20|DNA_REPLICATION_INITIATION           |TRUE    |
-
-### Module Diversity
-We considered if cell cycle annotation was over-represented in the Reactome or GO Biological Process modules.  The following function count modules with any mention of the word "CYCLE", and then finds the overlap between genes defined in the "CYCLE" modules and all other modules.
-
-```r
-getCCMods <- function(set){
-    mods <-  data.table(melt(geneIds(set), value.name='geneid'))
-    setnames(mods, 'L1', 'module')
-    mods[,':='(isCC=str_detect(module, cycleKw),
-                   geneid=as.character(geneid))]
-    mods[,size:=.N,keyby=module]
-    nmods = mods[,.(nmods = length(unique(module))),keyby=isCC]
-    genes <- mods[,.(ccGene=any(isCC), .N),keyby=list(geneid)]
-    mods <- merge(genes, mods,by='geneid')
-    modsccgenes <- dcast.data.table(mods, module+isCC +size~ ccGene)
-    modsccgenes[,ccpct:=`TRUE`/size]
-    medianOverlap <- modsccgenes[,.(median=median(ccpct)),keyby=list(isCC)]
-    list(ccMod=nmods[isCC==TRUE,nmods],
-         totalMod=nmods[,sum(nmods)],
-         overlapCCPct=round(medianOverlap[isCC==FALSE,median]*100, 0), modsccgenes=modsccgenes)
-    }
-
-reactome <- getCCMods(c2_set)
-bp <- getCCMods(c5_set)
-```
-
-In the Reactome modules only 30 (out of 674) modules had "CYCLE" annotation. In the non-cycle set, the median non-CYCLE module included only 2% of genes with any annotation for CYCLE.
-
-In the GO-Biological Process modules these statistics were 31/825 and 7%, respectively.
+| Direction|       FDR| totalrank|set                                  |
+|---------:|---------:|---------:|:------------------------------------|
+|        -1| 0.0000001|         1|CELL_CYCLE_PROCESS                   |
+|        -1| 0.0000002|         2|CELL_CYCLE_PHASE                     |
+|        -1| 0.0000008|         3|M_PHASE                              |
+|        -1| 0.0000008|         4|MITOSIS                              |
+|        -1| 0.0000009|         5|MITOTIC_CELL_CYCLE                   |
+|        -1| 0.0000009|         6|SISTER_CHROMATID_SEGREGATION         |
+|        -1| 0.0000011|         7|MITOTIC_SISTER_CHROMATID_SEGREGATION |
+|        -1| 0.0000012|         8|M_PHASE_OF_MITOTIC_CELL_CYCLE        |
+|        -1| 0.0000056|         9|CELL_CYCLE_GO_0007049                |
+|        -1| 0.0000150|        10|CHROMOSOME_SEGREGATION               |
+|        -1| 0.0000225|        11|CELL_CYCLE_CHECKPOINT_GO_0000075     |
+|        -1| 0.0000385|        12|CYTOKINESIS                          |
+|        -1| 0.0000452|        13|REGULATION_OF_MITOSIS                |
+|        -1| 0.0001653|        14|CELL_DIVISION                        |
+|        -1| 0.0002503|        15|DNA_DEPENDENT_DNA_REPLICATION        |
+|        -1| 0.0004236|        16|CHROMOSOME_CONDENSATION              |
+|        -1| 0.0011016|        17|MITOTIC_CELL_CYCLE_CHECKPOINT        |
+|        -1| 0.0018225|        18|DNA_REPLICATION                      |
+|        -1| 0.0032980|        19|DNA_INTEGRITY_CHECKPOINT             |
+|        -1| 0.0057410|        20|DNA_REPLICATION_INITIATION           |
+*Table 6: gene set enrichment analysis using GO-biological process modules on T cell clusters*
 
 
 ## Session Info
@@ -477,17 +462,12 @@ sessionInfo()
 ```
 
 ```
-## R version 3.2.1 (2015-06-18)
-## Platform: x86_64-pc-linux-gnu (64-bit)
-## Running under: Ubuntu 14.04.1 LTS
+## R version 3.2.2 (2015-08-14)
+## Platform: x86_64-apple-darwin13.4.0 (64-bit)
+## Running under: OS X 10.10.5 (Yosemite)
 ## 
 ## locale:
-##  [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C              
-##  [3] LC_TIME=en_US.UTF-8        LC_COLLATE=en_US.UTF-8    
-##  [5] LC_MONETARY=en_US.UTF-8    LC_MESSAGES=en_US.UTF-8   
-##  [7] LC_PAPER=en_US.UTF-8       LC_NAME=C                 
-##  [9] LC_ADDRESS=C               LC_TELEPHONE=C            
-## [11] LC_MEASUREMENT=en_US.UTF-8 LC_IDENTIFICATION=C       
+## [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
 ## 
 ## attached base packages:
 ## [1] parallel  stats4    stats     graphics  grDevices utils     datasets 
@@ -495,22 +475,20 @@ sessionInfo()
 ## 
 ## other attached packages:
 ##  [1] reshape2_1.4.1       MASS_7.3-43          Rtsne_0.10          
-##  [4] stringr_1.0.0        GSEABase_1.30.2      graph_1.46.0        
-##  [7] annotate_1.46.1      XML_3.98-1.3         limma_3.24.14       
-## [10] org.Mm.eg.db_3.1.2   RSQLite_1.0.0        DBI_0.3.1           
-## [13] AnnotationDbi_1.30.1 GenomeInfoDb_1.4.1   IRanges_2.2.5       
-## [16] S4Vectors_0.6.2      Biobase_2.28.0       BiocGenerics_0.14.0 
+##  [4] stringr_1.0.0        GSEABase_1.32.0      graph_1.48.0        
+##  [7] annotate_1.48.0      XML_3.98-1.3         limma_3.26.3        
+## [10] BiocInstaller_1.20.1 org.Mm.eg.db_3.2.3   RSQLite_1.0.0       
+## [13] DBI_0.3.1            AnnotationDbi_1.32.0 IRanges_2.4.4       
+## [16] S4Vectors_0.8.3      Biobase_2.30.0       BiocGenerics_0.16.1 
 ## [19] gridExtra_2.0.0      gdata_2.17.0         GGally_0.5.0        
-## [22] ggplot2_1.0.1        data.table_1.9.4     knitr_1.10.5        
-## [25] devtools_1.8.0      
+## [22] ggplot2_1.0.1        data.table_1.9.6     markdown_0.7.7      
+## [25] knitr_1.11           devtools_1.9.1      
 ## 
 ## loaded via a namespace (and not attached):
-##  [1] Rcpp_0.11.6      compiler_3.2.1   highr_0.5        formatR_1.2     
-##  [5] git2r_0.10.1     plyr_1.8.3       tools_3.2.1      digest_0.6.8    
-##  [9] evaluate_0.7     memoise_0.2.1    gtable_0.1.2     curl_0.9.1      
-## [13] proto_0.3-10     xml2_0.1.1       rversions_1.0.2  gtools_3.5.0    
-## [17] grid_3.2.1       reshape_0.8.5    magrittr_1.5     codetools_0.2-14
-## [21] scales_0.2.5     mime_0.3         xtable_1.7-4     colorspace_1.2-6
-## [25] labeling_0.3     stringi_0.5-5    munsell_0.4.2    markdown_0.7.7  
-## [29] chron_2.3-47
+##  [1] Rcpp_0.12.2      highr_0.5.1      formatR_1.2.1    plyr_1.8.3      
+##  [5] tools_3.2.2      digest_0.6.8     evaluate_0.8     memoise_0.2.1   
+##  [9] gtable_0.1.2     proto_0.3-10     gtools_3.5.0     grid_3.2.2      
+## [13] reshape_0.8.5    magrittr_1.5     codetools_0.2-14 scales_0.3.0    
+## [17] xtable_1.8-0     colorspace_1.2-6 labeling_0.3     stringi_1.0-1   
+## [21] munsell_0.4.2    chron_2.3-47
 ```
